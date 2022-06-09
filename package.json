@@ -1,5 +1,5 @@
 {
-  "name": "binance-future-transactions",
+  "name": "binance-funding-fee-to-line-notify",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

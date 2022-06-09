@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const { API_KEY, API_SECRET, LINE_NOTIFY_TOKEN } = process.env;
-
+const USER_TIME_ZONE = process.env.USER_TIME_ZONE || 'Asia/Taipei'
 const schedule = require("node-schedule");
 const Binance = require("node-binance-api");
 const dayjs = require("dayjs");
@@ -12,6 +12,12 @@ const binance = new Binance().options({
   APIKEY: API_KEY,
   APISECRET: API_SECRET,
 });
+
+
+const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone') // dependent on utc plugin
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 function lineNotify(message) {
   const form_data = new FormData();
@@ -64,9 +70,9 @@ async function main() {
     return false;
   }
 
-  const message = `${dayjs(res[0].time).format(
-    "YYYY/MM/DD HH:mm"
-  )}\n實收 BUSD: ${results.BUSD.toNumber()}, USDT: ${results.USDT.toNumber()}`;
+  const timestamp = dayjs(res[0].time).tz(USER_TIME_ZONE).format("YYYY/MM/DD HH:mm")
+
+  const message = `${timestamp}\n實收 BUSD: ${results.BUSD.toNumber()}, USDT: ${results.USDT.toNumber()}`;
   lineNotify(message);
 
   return res;
