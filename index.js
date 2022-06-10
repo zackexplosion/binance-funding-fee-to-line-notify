@@ -47,17 +47,18 @@ function lineNotify(message) {
 
 async function main() {
   const incomes = await binance.futuresIncome();
+
   var res = [];
   var results = {
-    BUSD: 0,
-    USDT: 0,
+    // BUSD: 0,
+    // USDT: 0,
   };
   const now = dayjs();
   res = incomes
     .filter((_) => _.incomeType === "FUNDING_FEE")
     .filter((_) => dayjs(now).diff(_.time, "hour") < 8)
     .map((_) => {
-      results[_.asset] = Big(_.income).plus(results[_.asset]);
+      results[_.asset] = Big(_.income).plus(results[_.asset] || 0);
 
       return {
         amount: _.income,
@@ -66,13 +67,29 @@ async function main() {
       };
     });
 
+  const deliveryIncomes = await binance.deliveryIncome()
+
+  deliveryIncomes
+    .filter(_ => _.incomeType === 'FUNDING_FEE')
+    .filter((_) => dayjs(now).diff(_.time, "hour") < 8)
+    .forEach(_ => {
+      results[_.asset] = Big(_.income).plus(results[_.asset] || 0);
+    })
+
+  // console.log(deliveryIncomes)
+
+
   if (res.length === 0) {
     return false;
   }
 
   const timestamp = dayjs(res[0].time).tz(USER_TIME_ZONE).format("YYYY/MM/DD HH:mm")
 
-  const message = `${timestamp}\n實收 BUSD: ${results.BUSD.toNumber()}, USDT: ${results.USDT.toNumber()}`;
+  var resultStringArray = []
+  Object.keys(results).forEach(_ => {
+    resultStringArray.push(`${_}: ${results[_].toNumber()}`)
+  })
+  const message = `${timestamp} 實收 \n${resultStringArray.join('\n')}`;
   lineNotify(message);
 
   return res;
@@ -99,4 +116,5 @@ function showNextInvocationTime() {
 
 showNextInvocationTime();
 
-main();
+
+
