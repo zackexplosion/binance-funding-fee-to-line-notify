@@ -46,7 +46,6 @@ function lineNotify(message) {
 }
 
 async function main() {
-  const incomes = await binance.futuresIncome();
 
   var res = [];
   var results = {
@@ -54,31 +53,41 @@ async function main() {
     // USDT: 0,
   };
   const now = dayjs();
-  res = incomes
-    .filter((_) => _.incomeType === "FUNDING_FEE")
-    .filter((_) => dayjs(now).diff(_.time, "hour") < 8)
-    .map((_) => {
-      results[_.asset] = Big(_.income).plus(results[_.asset] || 0);
 
-      return {
-        amount: _.income,
-        asset: _.asset,
-        time: dayjs(_.time).format(),
-      };
-    });
 
-  const deliveryIncomes = await binance.deliveryIncome()
+  try {
+    const incomes = await binance.futuresIncome();
+    res = incomes
+      .filter((_) => _.incomeType === "FUNDING_FEE")
+      .filter((_) => dayjs(now).diff(_.time, "hour") < 8)
+      .map((_) => {
+        results[_.asset] = Big(_.income).plus(results[_.asset] || 0);
 
-  deliveryIncomes
-    .filter(_ => _.incomeType === 'FUNDING_FEE')
-    .filter((_) => dayjs(now).diff(_.time, "hour") < 8)
-    .forEach(_ => {
-      results[_.asset] = Big(_.income).plus(results[_.asset] || 0);
+        return {
+          amount: _.income,
+          asset: _.asset,
+          time: dayjs(_.time).format(),
+        };
+      });
 
-      console.log(_)
-    })
+    const deliveryIncomes = await binance.deliveryIncome()
 
-  // console.log(deliveryIncomes)
+    if ( Array.isArray(deliveryIncomes)) {
+      deliveryIncomes
+        .filter(_ => _.incomeType === 'FUNDING_FEE')
+        .filter((_) => dayjs(now).diff(_.time, "hour") < 8)
+        .forEach(_ => {
+          results[_.asset] = Big(_.income).plus(results[_.asset] || 0);
+
+          console.log(_)
+        })
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+
+
 
 
   if (res.length === 0) {
